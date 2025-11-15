@@ -21,10 +21,17 @@ const Speedometer = () => {
       return;
     }
 
-    // Use environment variable if available, otherwise fall back to local development
-    const wsUrl = process.env.REACT_APP_WEBSOCKET_URL ||
-      (window.location.protocol === 'https:' ? 'wss:' : 'ws:') +
-      `//${window.location.hostname}${window.location.hostname === 'localhost' ? ':5000' : ''}/ws`;
+    let wsUrl;
+
+    if (process.env.NODE_ENV === 'production') {
+      wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
+        `wss://${window.location.host}/ws`;
+    } else {
+      wsUrl = 'ws://localhost:5000/ws';
+    }
+
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Using WebSocket URL:', wsUrl);
     console.log('Connecting to WebSocket:', wsUrl); // Debug log
     ws.current = new WebSocket(wsUrl);
 

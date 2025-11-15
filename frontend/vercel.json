@@ -11,6 +11,15 @@
   ],
   "routes": [
     {
+      "src": "/ws",
+      "dest": "https://speedometer-app-backend.vercel.app/ws",
+      "methods": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ]
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/static/$1"
     },

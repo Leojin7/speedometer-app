@@ -9,11 +9,32 @@ const { Pool } = require('pg');
 const app = express();
 const server = http.createServer(app);
 
+// Configure CORS with allowed origins
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'https://speedometer-app-frontend.vercel.app',
+  'https://speedometer-app-backend.vercel.app'
+];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5000'],
-  methods: ['GET', 'POST'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 app.use(express.json());
 
