@@ -31,7 +31,6 @@ export function Gauge({
   const percentage = Math.min(Math.max((value - min) / (max - min) * 100, 0), 100)
   const radius = 45
   const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = useMemo(() => circumference - (percentage / 100) * circumference, [circumference, percentage]);
 
   // Animate the gauge
   useEffect(() => {
