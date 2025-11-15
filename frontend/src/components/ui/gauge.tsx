@@ -408,7 +408,6 @@ function useNumberCounter({
   decimalPlaces?: number
 }) {
   const [displayValue, setDisplayValue] = useState(direction === "down" ? value : 0)
-  const [isInView, setIsInView] = useState(false)
 
   // Set initial display value
   useEffect(() => {
@@ -416,16 +415,11 @@ function useNumberCounter({
     setDisplayValue(initialValue)
   }, [direction, value])
 
-  // Simulate useInView for SVG context
+  // Set the final value after the delay
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsInView(true)
-      // Set the final value after the delay
-      const timer2 = setTimeout(() => {
-        setDisplayValue(direction === "down" ? 0 : value)
-      }, delay * 1000)
-      return () => clearTimeout(timer2)
-    }, 100)
+      setDisplayValue(direction === "down" ? 0 : value)
+    }, delay * 1000)
     return () => clearTimeout(timer)
   }, [value, direction, delay])
 
