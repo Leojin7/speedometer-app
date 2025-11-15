@@ -16,9 +16,8 @@ const Speedometer = () => {
 
   const connectWebSocket = useCallback(() => {
     if (ws.current) return
-
-    // Use the latest backend URL from your deployment
-    const wsUrl = 'wss://backend-accn1kkam-dev-ruhelas-projects-f398715f.vercel.app/ws';
+    // In frontend/src/components/Speedometer.tsx, update the WebSocket URL:
+    const wsUrl = 'ws://localhost:5000/ws';
 
     console.log('Connecting to WebSocket:', wsUrl)
     setConnectionStatus('connecting')

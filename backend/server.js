@@ -8,16 +8,15 @@ const { Pool } = require('pg');
 
 const app = express();
 const isVercel = process.env.VERCEL === '1';
-
-// Configure allowed origins
+// In backend/server.js, update the allowedOrigins array:
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://speedometer-frontend-6ps3f0ev2-dev-ruhelas-projects-f398715f.vercel.app',
-  /^https:\/\/speedometer-frontend-.*-dev-ruhelas-projects.*\.vercel\.app$/,
-  /^https:\/\/backend-.*-dev-ruhelas-projects.*\.vercel\.app$/,
-  /^wss?:\/\/backend-.*-dev-ruhelas-projects.*\.vercel\.app$/
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+  /^http:\/\/localhost(:\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/
 ];
-
 // Configure CORS
 const corsOptions = {
   origin: (origin, callback) => {
