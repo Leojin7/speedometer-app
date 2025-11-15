@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import type { CSSProperties, SVGProps } from "react"
-import { useMotionValue, useSpring } from "framer-motion"
+import { motion, useMotionValue, useSpring } from "framer-motion"
+import type { MotionValue } from "framer-motion"
 
 import { cn } from "../../lib/utils"
 
@@ -411,8 +412,8 @@ export function useNumberCounter({
   const [rawValue, setRawValue] = useState(direction === "down" ? value : 0)
   const [isInView, setIsInView] = useState(false)
 
-  const motionValue = useMotionValue(direction === "down" ? value : 0)
-  const springValue = useSpring(motionValue, {
+  const motionValue = useMotionValue<number>(direction === "down" ? value : 0)
+  const springValue = useSpring<MotionValue<number>>(motionValue, {
     damping: 60,
     stiffness: 100,
   })
@@ -442,12 +443,12 @@ export function useNumberCounter({
 
   // Update display value when spring value changes
   useEffect(() => {
-    const unsubscribe = springValue.on("change", (latest) => {
+    const unsubscribe = springValue.on("change", (latest: number) => {
       const formattedValue = Number(latest.toFixed(decimalPlaces))
       setDisplayValue(formattedValue)
       setRawValue(latest) // Keep the raw animated value for circle animation
     })
-    return unsubscribe
+    return () => unsubscribe()
   }, [springValue, decimalPlaces])
 
   const formattedDisplayValue = Intl.NumberFormat("en-US", {
