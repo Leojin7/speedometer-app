@@ -1,7 +1,7 @@
 // src/components/ui/gauge.tsx
 "use client"
 
-import { useEffect, useRef, useMemo } from "react"
+import { useEffect, useRef } from "react"
 import type { SVGProps } from "react"
 
 export function Gauge({
@@ -27,8 +27,6 @@ export function Gauge({
   const circleRef = useRef<SVGCircleElement>(null)
   const valueRef = useRef<number>(0)
 
-  // Calculate percentage
-  const percentage = Math.min(Math.max((value - min) / (max - min) * 100, 0), 100)
   const radius = 45
   const circumference = 2 * Math.PI * radius
 
