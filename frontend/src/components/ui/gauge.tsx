@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { CSSProperties, SVGProps } from "react"
-import { motion, useMotionValue, useSpring } from "framer-motion"
-import type { MotionValue } from "framer-motion"
+// Removed framer-motion imports as we're not using them
 
 import { cn } from "../../lib/utils"
 
@@ -384,6 +383,7 @@ export function Gauge({
             dominantBaseline="middle"
 
             fontSize={8}
+            fontSize={8}
             fontWeight="400"
             className="fill-muted-foreground"
             style={{ userSelect: "none" }}
@@ -394,70 +394,48 @@ export function Gauge({
       </svg>
     </div>
   )
-}
 
-// Hook version for use in SVG contexts - now returns both formatted text and raw animated value
-export function useNumberCounter({
-  value,
-  direction = "up",
-  delay = 0,
-  decimalPlaces = 0,
-}: {
-  value: number
-  direction?: "up" | "down"
-  delay?: number
-  decimalPlaces?: number
-}) {
-  const [displayValue, setDisplayValue] = useState(direction === "down" ? value : 0)
-  const [rawValue, setRawValue] = useState(direction === "down" ? value : 0)
-  const [isInView, setIsInView] = useState(false)
+  // Simple counter hook without animation dependencies
+  export function useNumberCounter({
+    value,
+    direction = "up",
+    delay = 0,
+    decimalPlaces = 0,
+  }: {
+    value: number
+    direction?: "up" | "down"
+    delay?: number
+    decimalPlaces?: number
+  }) {
+    const [displayValue, setDisplayValue] = useState(direction === "down" ? value : 0)
+    const [isInView, setIsInView] = useState(false)
 
-  const motionValue = useMotionValue<number>(direction === "down" ? value : 0)
-  const springValue = useSpring<MotionValue<number>>(motionValue, {
-    damping: 60,
-    stiffness: 100,
-  })
+    // Set initial display value
+    useEffect(() => {
+      const initialValue = direction === "down" ? value : 0
+      setDisplayValue(initialValue)
+    }, [direction, value])
 
-  // Set initial display value
-  useEffect(() => {
-    const initialValue = direction === "down" ? value : 0
-    setDisplayValue(initialValue)
-    setRawValue(initialValue)
-  }, [direction, value])
+    // Simulate useInView for SVG context
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setIsInView(true)
+        // Set the final value after the delay
+        const timer2 = setTimeout(() => {
+          setDisplayValue(direction === "down" ? 0 : value)
+        }, delay * 1000)
+        return () => clearTimeout(timer2)
+      }, 100)
+      return () => clearTimeout(timer)
+    }, [value, direction, delay])
 
-  // Simulate useInView for SVG context
-  useEffect(() => {
-    const timer = setTimeout(() => setIsInView(true), 100)
-    return () => clearTimeout(timer)
-  }, [])
+    const formattedDisplayValue = Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    }).format(displayValue)
 
-  // Trigger animation after delay
-  useEffect(() => {
-    if (isInView) {
-      const timeout = setTimeout(() => {
-        motionValue.set(direction === "down" ? 0 : value)
-      }, delay * 1000)
-      return () => clearTimeout(timeout)
+    return {
+      formattedValue: formattedDisplayValue,
+      rawValue: displayValue
     }
-  }, [motionValue, isInView, delay, value, direction])
-
-  // Update display value when spring value changes
-  useEffect(() => {
-    const unsubscribe = springValue.on("change", (latest: number) => {
-      const formattedValue = Number(latest.toFixed(decimalPlaces))
-      setDisplayValue(formattedValue)
-      setRawValue(latest) // Keep the raw animated value for circle animation
-    })
-    return () => unsubscribe()
-  }, [springValue, decimalPlaces])
-
-  const formattedDisplayValue = Intl.NumberFormat("en-US", {
-    minimumFractionDigits: decimalPlaces,
-    maximumFractionDigits: decimalPlaces,
-  }).format(displayValue)
-
-  return {
-    formattedValue: formattedDisplayValue,
-    rawValue: rawValue
   }
-}
