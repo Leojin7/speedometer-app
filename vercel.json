@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "backend/server.js",
       "use": "@vercel/node"
     },
     {
@@ -16,29 +16,11 @@
   "routes": [
     {
       "src": "/ws",
-      "dest": "https://speedometer-app-backend.vercel.app/ws",
-      "methods": [
-        "GET",
-        "POST",
-        "OPTIONS"
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/manifest.json",
-      "headers": {
-        "cache-control": "public, max-age=3600",
-        "Access-Control-Allow-Origin": "*"
-      }
+      "dest": "/backend/server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/frontend/$1"
     }
   ]
 }

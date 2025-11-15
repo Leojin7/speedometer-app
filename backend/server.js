@@ -7,7 +7,8 @@ const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
-const server = http.createServer(app);
+const isVercel = process.env.VERCEL === '1';
+const server = isVercel ? http.createServer() : http.createServer(app);
 
 // Configure CORS with allowed origins
 const allowedOrigins = [
@@ -43,19 +44,23 @@ app.options('*', cors());
 app.use(express.json());
 
 // WebSocket server with CORS support
-const wss = new WebSocket.Server({
-  server,
-  path: '/ws',
-  clientTracking: true,
-  verifyClient: (info, done) => {
-    const origin = info.origin || info.req.headers.origin;
-    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '')))) {
-      return done(true);
+const wss = new WebSocket.Server(
+  isVercel
+    ? { server }
+    : {
+      server,
+      path: '/ws',
+      clientTracking: true,
+      verifyClient: (info, done) => {
+        const origin = info.origin || info.req.headers.origin;
+        if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '')))) {
+          return done(true);
+        }
+        console.log('WebSocket connection rejected from origin:', origin);
+        return done(false, 401, 'Unauthorized');
+      }
     }
-    console.log('WebSocket connection rejected from origin:', origin);
-    return done(false, 401, 'Unauthorized');
-  }
-});
+);
 
 // Ping interval to keep connections alive
 const PING_INTERVAL = 30000; // 30 seconds
@@ -133,13 +138,17 @@ app.post('/api/speed', async (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket server running on ws://localhost:${PORT}/ws`);
-  initializeDatabase();
-  startSpeedSimulation();
-});
+if (isVercel) {
+  module.exports = app;
+} else {
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`WebSocket server running on ws://localhost:${PORT}/ws`);
+    initializeDatabase();
+    startSpeedSimulation();
+  });
+}
 
 // Initialize database
 async function initializeDatabase() {

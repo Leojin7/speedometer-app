@@ -25,9 +25,7 @@ const Speedometer = () => {
     }
 
     // Determine WebSocket URL based on environment
-    const wsUrl = process.env.NODE_ENV === 'production'
-      ? 'wss://speedometer-app-backend.vercel.app/ws'
-      : 'ws://localhost:5000/ws';
+    const wsUrl = window.location.origin.replace(/^http/, 'ws') + (process.env.NODE_ENV === 'production' ? '' : ':5000') + '/ws';
 
     console.log(`Connecting to WebSocket: ${wsUrl}`);
     setConnectionError(null);
