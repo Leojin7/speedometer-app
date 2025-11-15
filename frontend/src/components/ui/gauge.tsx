@@ -1,435 +1,130 @@
+// src/components/ui/gauge.tsx
 "use client"
 
-import { useEffect, useState } from "react"
-import type { CSSProperties, SVGProps } from "react"
-// Removed framer-motion imports as we're not using them
-
-import { cn } from "../../lib/utils"
-
-export interface GaugeProps extends Omit<SVGProps<SVGSVGElement>, "className"> {
-  value: number
-  size?: number | string
-  gapPercent?: number
-  strokeWidth?: number
-  equal?: boolean
-  showValue?: boolean
-  showPercentage?: boolean
-  primary?: "danger" | "warning" | "success" | "info" | string | { [key: number]: string }
-  secondary?: "danger" | "warning" | "success" | "info" | string | { [key: number]: string }
-  gradient?: boolean
-  multiRing?: {
-    enabled: boolean
-    rings?: Array<{
-      value: number
-      color: string
-      strokeWidth?: number
-      opacity?: number
-    }>
-  }
-  thresholds?: Array<{
-    value: number
-    color: string
-    label?: string
-  }>
-  gaugeType?: "full" | "half" | "quarter"
-  transition?: {
-    length?: number
-    step?: number
-    delay?: number
-  }
-  className?:
-  | string
-  | {
-    svgClassName?: string
-    primaryClassName?: string
-    secondaryClassName?: string
-    textClassName?: string
-    labelClassName?: string
-  }
-  label?: string
-  unit?: string
-  min?: number
-  max?: number
-  tickMarks?: boolean
-  glowEffect?: boolean
-}
+import { useEffect, useRef } from "react"
+import type { SVGProps } from "react"
 
 export function Gauge({
-  value,
-  size = 150,
-  gapPercent = 5,
-  strokeWidth = 10,
-  equal = false,
-  showValue = true,
-  showPercentage = false,
-  primary,
-  secondary,
-  gradient = false,
-  multiRing,
-  thresholds,
-  gaugeType = "full",
-  transition = {
-    length: 1000,
-    step: 200,
-    delay: 0,
-  },
-  className,
-  label,
-  unit = "%",
+  value = 0,
   min = 0,
   max = 100,
-  tickMarks = false,
-  glowEffect = false,
+  size = 200,
+  label = "Speed",
+  unit = "km/h",
+  showValue = true,
+  primary = "#10b981",
   ...props
-}: GaugeProps) {
-  const circleSize = 100
-  const radius = circleSize / 2 - strokeWidth / 2
+}: {
+  value: number
+  min?: number
+  max?: number
+  size?: number
+  label?: string
+  unit?: string
+  showValue?: boolean
+  primary?: string
+} & SVGProps<SVGSVGElement>) {
+  const circleRef = useRef<SVGCircleElement>(null)
+  const valueRef = useRef<number>(0)
+
+  // Calculate percentage
+  const percentage = Math.min(Math.max((value - min) / (max - min) * 100, 0), 100)
+  const radius = 45
   const circumference = 2 * Math.PI * radius
-  const percentToDegree = 360 / 100
+  const strokeDashoffset = circumference - (percentage / 100) * circumference
 
-  const offsetFactor = equal ? 0.5 : 0
-  const offsetFactorSecondary = 1 - offsetFactor
+  // Animate the gauge
+  useEffect(() => {
+    if (!circleRef.current) return
 
-  const { formattedValue: animatedValue, rawValue: animatedRawValue } = useNumberCounter({
-    value,
-    delay: (transition?.delay ?? 0) / 1000,
-    decimalPlaces: value % 1 !== 0 ? 1 : 0,
-  })
+    const animate = () => {
+      if (!circleRef.current) return
 
-  const getGaugeConfig = () => {
-    switch (gaugeType) {
-      case "half":
-        return {
-          startAngle: -90,
-          endAngle: 90,
-          circumferenceFactor: 0.5,
-          viewBox: `0 25 ${circleSize} 50`,
-        }
-      case "quarter":
-        return {
-          startAngle: 0,
-          endAngle: 90,
-          circumferenceFactor: 0.25,
-          viewBox: `25 25 50 50`,
-        }
-      default:
-        return {
-          startAngle: -90,
-          endAngle: 270,
-          circumferenceFactor: 1,
-          viewBox: `0 0 ${circleSize} ${circleSize}`,
-        }
-    }
-  }
+      const currentValue = valueRef.current
+      const targetValue = value
 
-  // Use the animated raw value for circle calculations instead of the static value
-  const strokePercent = animatedRawValue
+      if (currentValue === targetValue) return
 
-  const gaugeConfig = getGaugeConfig()
-  const adjustedCircumference = circumference * gaugeConfig.circumferenceFactor
-  const adjustedPercentToPx = adjustedCircumference / 100
+      const difference = targetValue - currentValue
+      const step = difference * 0.1
 
-  const primaryStrokeDasharray = () => {
-    if (offsetFactor > 0 && strokePercent > 100 - gapPercent * 2 * offsetFactor) {
-      const subtract = -strokePercent + 100
-      return `${Math.max(strokePercent * adjustedPercentToPx - subtract * adjustedPercentToPx, 0)} ${adjustedCircumference}`
-    } else {
-      const subtract = gapPercent * 2 * offsetFactor
-      return `${Math.max(strokePercent * adjustedPercentToPx - subtract * adjustedPercentToPx, 0)} ${adjustedCircumference}`
-    }
-  }
+      valueRef.current = Math.abs(step) < 0.1 ? targetValue : currentValue + step
 
-  const secondaryStrokeDasharray = () => {
-    if (offsetFactorSecondary < 1 && strokePercent < gapPercent * 2 * offsetFactorSecondary) {
-      const subtract = strokePercent
-      return `${Math.max((100 - strokePercent) * adjustedPercentToPx - subtract * adjustedPercentToPx, 0)} ${adjustedCircumference}`
-    } else {
-      const subtract = gapPercent * 2 * offsetFactorSecondary
-      return `${Math.max((100 - strokePercent) * adjustedPercentToPx - subtract * adjustedPercentToPx, 0)} ${adjustedCircumference}`
-    }
-  }
+      const currentPercentage = Math.min(Math.max((valueRef.current - min) / (max - min) * 100, 0), 100)
+      const currentOffset = circumference - (currentPercentage / 100) * circumference
 
-  const primaryTransform = () => {
-    if (offsetFactor > 0 && strokePercent > 100 - gapPercent * 2 * offsetFactor) {
-      const add = 0.5 * (-strokePercent + 100)
-      return `rotate(${-90 + add * percentToDegree}deg)`
-    } else {
-      const add = gapPercent * offsetFactor
-      return `rotate(${-90 + add * percentToDegree}deg)`
-    }
-  }
+      circleRef.current.style.strokeDashoffset = currentOffset.toString()
 
-  const secondaryTransform = () => {
-    if (offsetFactorSecondary < 1 && strokePercent < gapPercent * 2 * offsetFactorSecondary) {
-      const subtract = 0.5 * strokePercent
-      return `rotate(${360 - 90 - subtract * percentToDegree}deg) scaleY(-1)`
-    } else {
-      const subtract = gapPercent * offsetFactorSecondary
-      return `rotate(${360 - 90 - subtract * percentToDegree}deg) scaleY(-1)`
-    }
-  }
-
-  const getColor = (colorProp: typeof primary, isSecondary = false) => {
-    const defaultColors = isSecondary
-      ? { danger: "#fecaca", warning: "#fde68a", info: "#bfdbfe", success: "#bbf7d0" }
-      : { danger: "#dc2626", warning: "#f59e0b", info: "#3b82f6", success: "#22c55e" }
-
-    if (!colorProp) {
-      if (isSecondary) return "rgba(85, 85, 85, 0.2)"
-      return strokePercent <= 25
-        ? defaultColors.danger
-        : strokePercent <= 50
-          ? defaultColors.warning
-          : strokePercent <= 75
-            ? defaultColors.info
-            : defaultColors.success
-    }
-
-    if (typeof colorProp === "string") {
-      return defaultColors[colorProp as keyof typeof defaultColors] || colorProp
-    }
-
-    if (typeof colorProp === "object") {
-      const keys = Object.keys(colorProp).sort((a, b) => Number(a) - Number(b))
-      const checkValue = isSecondary ? 100 - strokePercent : strokePercent
-
-      for (let i = 0; i < keys.length; i++) {
-        const currentKey = Number(keys[i])
-        const nextKey = Number(keys[i + 1])
-        if (checkValue >= currentKey && (checkValue < nextKey || !nextKey)) {
-          const color = colorProp[currentKey]
-          return defaultColors[color as keyof typeof defaultColors] || color
-        }
+      if (valueRef.current !== targetValue) {
+        requestAnimationFrame(animate)
       }
     }
 
-    return isSecondary ? "#e5e7eb" : "#3b82f6"
-  }
-
-  const primaryStroke = getColor(primary)
-  const secondaryStroke = getColor(secondary, true)
-
-  const primaryOpacity = () => {
-    if (
-      offsetFactor > 0 &&
-      strokePercent < gapPercent * 2 * offsetFactor &&
-      strokePercent < gapPercent * 2 * offsetFactorSecondary
-    ) {
-      return 0
-    } else return 1
-  }
-
-  const secondaryOpacity = () => {
-    if (
-      (offsetFactor === 0 && strokePercent > 100 - gapPercent * 2) ||
-      (offsetFactor > 0 &&
-        strokePercent > 100 - gapPercent * 2 * offsetFactor &&
-        strokePercent > 100 - gapPercent * 2 * offsetFactorSecondary)
-    ) {
-      return 0
-    } else return 1
-  }
-
-  const circleStyles: CSSProperties = {
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    strokeDashoffset: 0,
-    strokeWidth: strokeWidth,
-    // Remove CSS transition since we're using animated values
-    transformOrigin: "50% 50%",
-    shapeRendering: "geometricPrecision",
-  }
-
-  const glowStyles = glowEffect
-    ? {
-      filter: `
-        drop-shadow(0 0 2px ${primaryStroke}80)
-        drop-shadow(0 0 6px ${primaryStroke}60)
-        drop-shadow(0 0 12px ${primaryStroke}40)
-        drop-shadow(0 0 20px ${primaryStroke}20)
-      `,
-    }
-    : {}
-
-
-  const generateTickMarks = () => {
-    if (!tickMarks) return null
-    const ticks = []
-    const tickCount = 8
-
-    for (let i = 0; i <= tickCount; i++) {
-      const angle = (i / tickCount) * (gaugeConfig.endAngle - gaugeConfig.startAngle) + gaugeConfig.startAngle
-      const tickRadius = radius - strokeWidth / 2
-      const tickLength = 6
-
-      const x1 = circleSize / 2 + (tickRadius - tickLength) * Math.cos((angle * Math.PI) / 180)
-      const y1 = circleSize / 2 + (tickRadius - tickLength) * Math.sin((angle * Math.PI) / 180)
-      const x2 = circleSize / 2 + tickRadius * Math.cos((angle * Math.PI) / 180)
-      const y2 = circleSize / 2 + tickRadius * Math.sin((angle * Math.PI) / 180)
-
-      ticks.push(<line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1" opacity="0.3" />)
-    }
-    return ticks
-  }
+    requestAnimationFrame(animate)
+  }, [value, min, max, circumference])
 
   return (
-    <div className="relative inline-block">
+    <div className="flex flex-col items-center">
       <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox={`0 0 ${circleSize} ${circleSize}`}
-        shapeRendering="crispEdges"
         width={size}
-        height={size}
-        style={{ userSelect: "none", ...glowStyles }}
-        fill="none"
-        className={cn("", typeof className === "string" ? className : className?.svgClassName)}
+        height={size / 2 + 20}
+        viewBox="0 0 120 80"
         {...props}
       >
-
-        {gradient && (
-          <defs>
-            <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor={primaryStroke} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={primaryStroke} stopOpacity="1" />
-            </linearGradient>
-          </defs>
-        )}
-
-        {generateTickMarks()}
-
-        {multiRing?.enabled &&
-          multiRing.rings?.map((ring, index) => (
-            <circle
-              key={`ring-${index}`}
-              cx={circleSize / 2}
-              cy={circleSize / 2}
-              r={radius - (index + 1) * (strokeWidth + 2)}
-              style={{
-                ...circleStyles,
-                strokeWidth: ring.strokeWidth || strokeWidth - 2,
-                strokeDasharray: `${(ring.value / 100) * adjustedCircumference} ${adjustedCircumference}`,
-                transform: primaryTransform(),
-                stroke: ring.color,
-                opacity: ring.opacity
-              }}
-            />
-          ))}
-
-
+        {/* Background circle */}
         <circle
-          cx={circleSize / 2}
-          cy={circleSize / 2}
+          cx="60"
+          cy="60"
           r={radius}
-          style={{
-            ...circleStyles,
-            strokeDasharray: secondaryStrokeDasharray(),
-            transform: secondaryTransform(),
-            stroke: secondaryStroke,
-            opacity: secondaryOpacity(),
-          }}
-          className={cn("", typeof className === "object" && className?.secondaryClassName)}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="10"
+          strokeLinecap="round"
+          transform="rotate(-180 60 60)"
         />
 
-
+        {/* Progress circle */}
         <circle
-          cx={circleSize / 2}
-          cy={circleSize / 2}
+          ref={circleRef}
+          cx="60"
+          cy="60"
           r={radius}
+          fill="none"
+          stroke={primary}
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference}
+          transform="rotate(-180 60 60)"
           style={{
-            ...circleStyles,
-            strokeDasharray: primaryStrokeDasharray(),
-            transform: primaryTransform(),
-            stroke: gradient ? "url(#primaryGradient)" : primaryStroke,
-            opacity: primaryOpacity(),
+            transition: 'stroke-dashoffset 0.5s ease-out',
           }}
-          className={cn("", typeof className === "object" && className?.primaryClassName)}
         />
-        {thresholds?.map((threshold, index) => {
-          const thresholdPercent = ((threshold.value - min) / (max - min)) * 100
-          const angle =
-            (thresholdPercent / 100) * (gaugeConfig.endAngle - gaugeConfig.startAngle) + gaugeConfig.startAngle
-          const indicatorRadius = radius + strokeWidth / 2 + 5
-          const x = circleSize / 2 + indicatorRadius * Math.cos((angle * Math.PI) / 180)
-          const y = circleSize / 2 + indicatorRadius * Math.sin((angle * Math.PI) / 180)
 
-          return <circle key={`threshold-${index}`} cx={x} cy={y} r="2" fill={threshold.color} />
-        })}
-
+        {/* Value display */}
         {showValue && (
-          <g>
-
-            <text
-              x={circleSize / 2}
-              y={circleSize / 2}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              alignmentBaseline="central"
-              fill="currentColor"
-              fontSize={30}
-              fontWeight="700"
-              className={cn("font-bold", typeof className === "object" && className?.textClassName)}
-              style={{ userSelect: "none" }}
-            >
-              {animatedValue}
-              {showPercentage && unit}
-            </text>
-          </g>
-        )}
-        {label && (
           <text
-            x={circleSize / 2}
-            y={circleSize / 2 + 20}
+            x="60"
+            y="50"
             textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={8}
-            fontWeight="400"
-            className="fill-muted-foreground"
-            style={{ userSelect: "none" }}
+            className="text-xl font-bold fill-gray-800"
           >
-            {label}
+            {value.toFixed(1)} {unit}
           </text>
         )}
+
+        {/* Label */}
+        <text
+          x="60"
+          y="75"
+          textAnchor="middle"
+          className="text-sm fill-gray-500"
+        >
+          {label}
+        </text>
       </svg>
     </div>
   )
-
 }
 
-// Simple counter hook without animation dependencies
-function useNumberCounter({
-  value,
-  direction = "up",
-  delay = 0,
-  decimalPlaces = 0,
-}: {
-  value: number
-  direction?: "up" | "down"
-  delay?: number
-  decimalPlaces?: number
-}) {
-  const [displayValue, setDisplayValue] = useState(direction === "down" ? value : 0)
-
-  // Set initial display value
-  useEffect(() => {
-    const initialValue = direction === "down" ? value : 0
-    setDisplayValue(initialValue)
-  }, [direction, value])
-
-  // Set the final value after the delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDisplayValue(direction === "down" ? 0 : value)
-    }, delay * 1000)
-    return () => clearTimeout(timer)
-  }, [value, direction, delay])
-
-  const formattedDisplayValue = Intl.NumberFormat("en-US", {
-    minimumFractionDigits: decimalPlaces,
-    maximumFractionDigits: decimalPlaces,
-  }).format(displayValue)
-
-  return {
-    formattedValue: formattedDisplayValue,
-    rawValue: displayValue
-  }
-}
+export default Gauge;
