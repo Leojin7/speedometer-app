@@ -14,7 +14,10 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
   'https://speedometer-app-frontend.vercel.app',
-  'https://speedometer-app-backend.vercel.app'
+  'https://speedometer-app-backend.vercel.app',
+  'https://speedometer-6hfw1wsm2-dev-ruhelas-projects-f398715f.vercel.app',
+  'https://speedometer-6hfw1wsm2-dev-ruhelas-projects-f398715f.vercel.app/ws',
+  'wss://speedometer-6hfw1wsm2-dev-ruhelas-projects-f398715f.vercel.app'
 ];
 
 app.use(cors({

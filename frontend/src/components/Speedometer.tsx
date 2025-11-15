@@ -24,8 +24,7 @@ const Speedometer = () => {
     let wsUrl;
 
     if (process.env.NODE_ENV === 'production') {
-      wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
-        `wss://${window.location.host}/ws`;
+      wsUrl = 'wss://speedometer-app-backend.vercel.app/ws';
     } else {
       wsUrl = 'ws://localhost:5000/ws';
     }
