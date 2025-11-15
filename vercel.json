@@ -16,7 +16,11 @@
   "routes": [
     {
       "src": "/ws",
-      "dest": "/backend/server.js"
+      "dest": "/backend/server.js",
+      "headers": {
+        "Connection": "Upgrade",
+        "Upgrade": "websocket"
+      }
     },
     {
       "src": "/(.*)",

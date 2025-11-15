@@ -10,33 +10,52 @@ const app = express();
 const isVercel = process.env.VERCEL === '1';
 const server = isVercel ? http.createServer() : http.createServer(app);
 
-// Configure CORS with allowed origins
+// Configure CORS with allowed origins and WebSocket support
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
   'https://speedometer-app-frontend.vercel.app',
   'https://speedometer-app-backend.vercel.app',
-  'https://speedometer-guhijxs04-dev-ruhelas-projects-f398715f.vercel.app',
+  'https://speedometer-ofhtk9vu2-dev-ruhelas-projects-f398715f.vercel.app',
   'wss://speedometer-app-backend.vercel.app',
   'https://speedometer-app.vercel.app',
-  'wss://speedometer-app.vercel.app'
+  'wss://speedometer-app.vercel.app',
+  /^\.*\.vercel\.app$/,  // Allow all Vercel preview deployments
+  /^https?:\/\/localhost(:\d+)?$/  // Allow localhost with any port
 ];
 
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+    // Check if the origin matches any of the allowed patterns
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+
+    if (!isAllowed) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+      console.warn(msg);
       return callback(new Error(msg), false);
     }
     return callback(null, true);
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'OPTIONS', 'UPGRADE'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'Upgrade'],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 
 // Handle preflight requests
 app.options('*', cors());
@@ -44,23 +63,60 @@ app.options('*', cors());
 app.use(express.json());
 
 // WebSocket server with CORS support
-const wss = new WebSocket.Server(
-  isVercel
-    ? { server }
-    : {
-      server,
-      path: '/ws',
-      clientTracking: true,
-      verifyClient: (info, done) => {
-        const origin = info.origin || info.req.headers.origin;
-        if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '')))) {
-          return done(true);
-        }
-        console.log('WebSocket connection rejected from origin:', origin);
-        return done(false, 401, 'Unauthorized');
+let wss;
+
+if (isVercel) {
+  // Vercel serverless function handling
+  wss = new WebSocket.Server({ noServer: true });
+
+  // Handle WebSocket upgrade requests
+  server.on('upgrade', (request, socket, head) => {
+    const origin = request.headers.origin;
+
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
       }
+      return false;
+    });
+
+    if (!isAllowed) {
+      console.log('WebSocket connection rejected from origin:', origin);
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
     }
-);
+
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  });
+} else {
+  // Local development with WebSocket.Server
+  wss = new WebSocket.Server({
+    server,
+    path: '/ws',
+    clientTracking: true,
+    verifyClient: (info, done) => {
+      const origin = info.origin || info.req.headers.origin;
+      if (!origin || allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') {
+          return origin === allowed;
+        } else if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return false;
+      })) {
+        return done(true);
+      }
+      console.log('WebSocket connection rejected from origin:', origin);
+      return done(false, 401, 'Unauthorized');
+    }
+  });
+}
 
 // Ping interval to keep connections alive
 const PING_INTERVAL = 30000; // 30 seconds
