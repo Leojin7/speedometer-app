@@ -15,9 +15,10 @@ const allowedOrigins = [
   'http://localhost:5000',
   'https://speedometer-app-frontend.vercel.app',
   'https://speedometer-app-backend.vercel.app',
-  'https://speedometer-6hfw1wsm2-dev-ruhelas-projects-f398715f.vercel.app',
-  'https://speedometer-6hfw1wsm2-dev-ruhelas-projects-f398715f.vercel.app/ws',
-  'wss://speedometer-6hfw1wsm2-dev-ruhelas-projects-f398715f.vercel.app'
+  'https://speedometer-guhijxs04-dev-ruhelas-projects-f398715f.vercel.app',
+  'wss://speedometer-app-backend.vercel.app',
+  'https://speedometer-app.vercel.app',
+  'wss://speedometer-app.vercel.app'
 ];
 
 app.use(cors({
@@ -45,7 +46,15 @@ app.use(express.json());
 const wss = new WebSocket.Server({
   server,
   path: '/ws',
-  clientTracking: true
+  clientTracking: true,
+  verifyClient: (info, done) => {
+    const origin = info.origin || info.req.headers.origin;
+    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '')))) {
+      return done(true);
+    }
+    console.log('WebSocket connection rejected from origin:', origin);
+    return done(false, 401, 'Unauthorized');
+  }
 });
 
 // Ping interval to keep connections alive
