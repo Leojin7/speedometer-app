@@ -8,29 +8,53 @@ const { Pool } = require('pg');
 
 const app = express();
 const isVercel = process.env.VERCEL === '1';
-// In backend/server.js, update the allowedOrigins array:
+
+// Configure allowed origins for CORS and WebSocket
 const allowedOrigins = [
+  // Local development
   'http://localhost:3000',
-  'https://speedometer-nxf4hsgbr-dev-ruhelas-projects-f398715f.vercel.app',
-  /^https:\/\/speedometer-nxf4hsgbr-dev-ruhelas-projects-f398715f\.vercel\.app$/,
-  /^https:\/\/backend-nxf4hsgbr-dev-ruhelas-projects-f398715f\.vercel\.app$/,
-  /^wss?:\/\/backend-nxf4hsgbr-dev-ruhelas-projects-f398715f\.vercel\.app$/
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+
+  // Vercel deployments
+  'https://speedometer-frontend-nxf4hsgbr-dev-ruhelas-projects-f398715f.vercel.app',
+  'https://speedometer-backend-nxf4hsgbr-dev-ruhelas-projects-f398715f.vercel.app',
+
+  // Vercel preview deployments
+  /^https:\/\/speedometer-frontend-.*-dev-ruhelas-projects.*\.vercel\.app$/,
+  /^https:\/\/speedometer-backend-.*-dev-ruhelas-projects.*\.vercel\.app$/,
+  /^wss?:\/\/speedometer-backend-.*-dev-ruhelas-projects.*\.vercel\.app$/
 ];
-// Configure CORS
+
+// Configure CORS with WebSocket support
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.some(o =>
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    // Check if the origin is allowed
+    if (allowedOrigins.some(o =>
       typeof o === 'string' ? o === origin : o.test(origin)
     )) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+
+    console.log('CORS blocked for origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Upgrade'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'WEBSOCKET'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Upgrade',
+    'Connection',
+    'Sec-WebSocket-Version',
+    'Sec-WebSocket-Key',
+    'Sec-WebSocket-Extensions',
+    'Sec-WebSocket-Protocol'
+  ],
   exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
   maxAge: 86400, // 24 hours
   preflightContinue: false,

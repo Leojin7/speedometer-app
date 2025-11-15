@@ -11,21 +11,8 @@
   ],
   "routes": [
     {
-      "src": "/ws",
-      "dest": "https://backend-accn1kkam-dev-ruhelas-projects-f398715f.vercel.app/ws",
-      "methods": [
-        "GET",
-        "POST",
-        "OPTIONS"
-      ]
-    },
-    {
       "src": "/static/(.*)",
       "dest": "/static/$1"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/favicon.ico"
     },
     {
       "src": "/manifest.json",
@@ -35,10 +22,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "build": {
-    "env": {
-      "NODE_VERSION": "16.x"
-    }
-  }
+  ]
 }

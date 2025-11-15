@@ -16,10 +16,10 @@ const Speedometer = () => {
 
   const connectWebSocket = useCallback(() => {
     if (ws.current) return
-    // In frontend/src/components/Speedometer.tsx, update the WebSocket URL:
+    // WebSocket URL configuration for both development and production
     const wsUrl = process.env.NODE_ENV === 'development'
       ? 'ws://localhost:5000/ws'
-      : 'wss://your-backend-url.vercel.app/ws';  // Replace with your actual backend URL
+      : 'wss://speedometer-backend-nxf4hsgbr-dev-ruhelas-projects-f398715f.vercel.app/ws';
 
     console.log('Connecting to WebSocket:', wsUrl)
     setConnectionStatus('connecting')
