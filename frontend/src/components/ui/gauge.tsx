@@ -1,7 +1,7 @@
 // src/components/ui/gauge.tsx
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useMemo } from "react"
 import type { SVGProps } from "react"
 
 export function Gauge({
@@ -31,7 +31,7 @@ export function Gauge({
   const percentage = Math.min(Math.max((value - min) / (max - min) * 100, 0), 100)
   const radius = 45
   const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (percentage / 100) * circumference
+  const strokeDashoffset = useMemo(() => circumference - (percentage / 100) * circumference, [circumference, percentage]);
 
   // Animate the gauge
   useEffect(() => {
