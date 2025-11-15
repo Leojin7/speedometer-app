@@ -381,8 +381,6 @@ export function Gauge({
             y={circleSize / 2 + 20}
             textAnchor="middle"
             dominantBaseline="middle"
-
-            fontSize={8}
             fontSize={8}
             fontWeight="400"
             className="fill-muted-foreground"
@@ -395,47 +393,49 @@ export function Gauge({
     </div>
   )
 
-  // Simple counter hook without animation dependencies
-  export function useNumberCounter({
-    value,
-    direction = "up",
-    delay = 0,
-    decimalPlaces = 0,
-  }: {
-    value: number
-    direction?: "up" | "down"
-    delay?: number
-    decimalPlaces?: number
-  }) {
-    const [displayValue, setDisplayValue] = useState(direction === "down" ? value : 0)
-    const [isInView, setIsInView] = useState(false)
+}
 
-    // Set initial display value
-    useEffect(() => {
-      const initialValue = direction === "down" ? value : 0
-      setDisplayValue(initialValue)
-    }, [direction, value])
+// Simple counter hook without animation dependencies
+function useNumberCounter({
+  value,
+  direction = "up",
+  delay = 0,
+  decimalPlaces = 0,
+}: {
+  value: number
+  direction?: "up" | "down"
+  delay?: number
+  decimalPlaces?: number
+}) {
+  const [displayValue, setDisplayValue] = useState(direction === "down" ? value : 0)
+  const [isInView, setIsInView] = useState(false)
 
-    // Simulate useInView for SVG context
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setIsInView(true)
-        // Set the final value after the delay
-        const timer2 = setTimeout(() => {
-          setDisplayValue(direction === "down" ? 0 : value)
-        }, delay * 1000)
-        return () => clearTimeout(timer2)
-      }, 100)
-      return () => clearTimeout(timer)
-    }, [value, direction, delay])
+  // Set initial display value
+  useEffect(() => {
+    const initialValue = direction === "down" ? value : 0
+    setDisplayValue(initialValue)
+  }, [direction, value])
 
-    const formattedDisplayValue = Intl.NumberFormat("en-US", {
-      minimumFractionDigits: decimalPlaces,
-      maximumFractionDigits: decimalPlaces,
-    }).format(displayValue)
+  // Simulate useInView for SVG context
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInView(true)
+      // Set the final value after the delay
+      const timer2 = setTimeout(() => {
+        setDisplayValue(direction === "down" ? 0 : value)
+      }, delay * 1000)
+      return () => clearTimeout(timer2)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [value, direction, delay])
 
-    return {
-      formattedValue: formattedDisplayValue,
-      rawValue: displayValue
-    }
+  const formattedDisplayValue = Intl.NumberFormat("en-US", {
+    minimumFractionDigits: decimalPlaces,
+    maximumFractionDigits: decimalPlaces,
+  }).format(displayValue)
+
+  return {
+    formattedValue: formattedDisplayValue,
+    rawValue: displayValue
   }
+}
