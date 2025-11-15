@@ -21,9 +21,10 @@ const Speedometer = () => {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-
-    const wsUrl = `${protocol}//${window.location.hostname}:5000/ws`;
+    // Use environment variable if available, otherwise fall back to local development
+    const wsUrl = process.env.REACT_APP_WEBSOCKET_URL ||
+      (window.location.protocol === 'https:' ? 'wss:' : 'ws:') +
+      `//${window.location.hostname}${window.location.hostname === 'localhost' ? ':5000' : ''}/ws`;
     console.log('Connecting to WebSocket:', wsUrl); // Debug log
     ws.current = new WebSocket(wsUrl);
 
@@ -63,9 +64,6 @@ const Speedometer = () => {
       }
     };
   }, [isRunning]);
-
-  // Calculate percentage for the gauge (assuming max speed is 120)
-  const speedPercentage = (speed / 120) * 100
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col items-center justify-center p-4">
