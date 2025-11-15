@@ -17,11 +17,8 @@ const Speedometer = () => {
   const connectWebSocket = useCallback(() => {
     if (ws.current) return
 
-    // Use environment variable if available, otherwise determine based on environment
-    const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? `wss://${window.location.host}/ws`
-        : 'ws://localhost:5000/ws')
+    // Use the latest backend URL from your deployment
+    const wsUrl = 'wss://backend-accn1kkam-dev-ruhelas-projects-f398715f.vercel.app/ws';
 
     console.log('Connecting to WebSocket:', wsUrl)
     setConnectionStatus('connecting')

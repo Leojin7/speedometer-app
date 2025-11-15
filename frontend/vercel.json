@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/ws",
-      "dest": "https://speedometer-app-backend.vercel.app/ws",
+      "dest": "https://backend-accn1kkam-dev-ruhelas-projects-f398715f.vercel.app/ws",
       "methods": [
         "GET",
         "POST",
