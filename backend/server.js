@@ -11,11 +11,10 @@ const isVercel = process.env.VERCEL === '1';
 // In backend/server.js, update the allowedOrigins array:
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:5000',
-  'http://127.0.0.1:5000',
-  /^http:\/\/localhost(:\d+)?$/,
-  /^http:\/\/127\.0\.0\.1(:\d+)?$/
+  'https://speedometer-nxf4hsgbr-dev-ruhelas-projects-f398715f.vercel.app',
+  /^https:\/\/speedometer-nxf4hsgbr-dev-ruhelas-projects-f398715f\.vercel\.app$/,
+  /^https:\/\/backend-nxf4hsgbr-dev-ruhelas-projects-f398715f\.vercel\.app$/,
+  /^wss?:\/\/backend-nxf4hsgbr-dev-ruhelas-projects-f398715f\.vercel\.app$/
 ];
 // Configure CORS
 const corsOptions = {
