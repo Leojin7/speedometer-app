@@ -27,8 +27,11 @@ const Speedometer = () => {
     // Determine WebSocket URL based on environment
     let wsUrl;
     if (process.env.NODE_ENV === 'production') {
-      // For production, use the same origin with wss protocol
-      wsUrl = window.location.origin.replace(/^http/, 'wss') + '/ws';
+      // For production, ensure we use wss for https and ws for http
+      const isSecure = window.location.protocol === 'https:';
+      const protocol = isSecure ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/ws`;
     } else {
       // For development, use localhost:5000
       wsUrl = 'ws://localhost:5000/ws';
